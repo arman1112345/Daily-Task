@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arman’s Task Board</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef1ee;--surface:#fff;--ink:#16252b;--muted:#5b6b70;--line:#d3dbd7;--accent:#0f6b63;--accent-ink:#fff;
+--crit:#b3261e;--high:#c4600a;--med:#8a6d00;--low:#4a6b8a;--done:#8a9a96}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#10191c;--surface:#18262a;--ink:#e6eeea;--muted:#9bb0aa;--line:#2b3d41;--accent:#4fc3b3;--accent-ink:#06201c;--crit:#ff8a80;--high:#ffb066;--med:#e8cc5a;--low:#8fb8dd;--done:#6d807b}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#10191c;--surface:#18262a;--ink:#e6eeea;--muted:#9bb0aa;--line:#2b3d41;--accent:#4fc3b3;--accent-ink:#06201c;--crit:#ff8a80;--high:#ffb066;--med:#e8cc5a;--low:#8fb8dd;--done:#6d807b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Source Sans 3",system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;margin:0}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+h1{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:2px 0 0}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;min-width:92px}
+.stat b{display:block;font:800 1.5rem "Bricolage Grotesque",sans-serif}
+.stat span{font-size:.85rem;color:var(--muted)}
+.capture{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+.capture h2{font-size:1.1rem;margin-bottom:8px}
+textarea{width:100%;min-height:76px;resize:vertical;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center}
+button,select{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.6;cursor:wait}
+.msg{color:var(--muted);font-size:.9rem}
+.tip{border-left:4px solid var(--accent);background:var(--surface);padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:16px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.bar button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;align-items:start}
+.col{background:color-mix(in srgb,var(--surface) 55%,transparent);border:1px solid var(--line);border-radius:12px;padding:10px}
+.col h3{font-size:1.02rem;display:flex;justify-content:space-between;padding:2px 4px 8px}
+.col h3 small{color:var(--muted);font:600 .9rem "Source Sans 3",sans-serif}
+.task{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--p,var(--low));border-radius:8px;padding:10px 10px 8px;margin-bottom:8px;display:flex;gap:10px}
+.task input[type=checkbox]{width:22px;height:22px;margin-top:2px;accent-color:var(--accent);flex:none}
+.task.done{border-left-color:var(--done)}
+.task.done .t{text-decoration:line-through;color:var(--done)}
+.t{font-weight:600;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:.82rem;color:var(--muted);align-items:center}
+.tag{border:1px solid currentColor;border-radius:99px;padding:0 8px;font-weight:600;color:var(--p)}
+.late{color:var(--crit);font-weight:600}
+.del{margin-left:auto;border:0;background:none;color:var(--muted);padding:0 4px;font-size:.85rem;text-decoration:underline}
+.note{font-size:.85rem;color:var(--muted);margin-top:2px}
+.empty{color:var(--muted);padding:8px 4px;font-size:.92rem}
+@media (max-width:520px){h1{font-size:1.6rem}.stat{flex:1}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <h1>Arman’s Task Board</h1>
+    <p class="sub">Statutory approvals, tenders and commercial work, sorted by urgency.</p>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<section class="capture" aria-labelledby="capH">
+  <h2 id="capH">Speak or type a note</h2>
+  <textarea id="note" placeholder="Type or dictate in Hindi, Marathi or English. Example: MSEDCL ची NOC उद्या पर्यंत follow-up करायची, tender doc शुक्रवारी submit."></textarea>
+  <div class="row">
+    <button class="primary" id="extract">Extract tasks</button>
+    <select id="lang" aria-label="Speaking language" hidden><option value="">Language: device default</option><option value="hi-IN">Hindi</option><option value="mr-IN">Marathi</option><option value="en-IN">English (India)</option></select>
+    <button id="mic" class="primary" hidden>Start listening</button>
+    <button id="addPlain">Add as one task</button>
+    <span class="msg" id="msg" role="status"></span>
+  </div>
+  <div class="msg" id="live" aria-live="polite"></div>
+</section>
+
+<div class="tip" id="tip"></div>
+
+<div class="bar">
+  <button data-f="open" aria-pressed="true">Open</button>
+  <button data-f="all" aria-pressed="false">All</button>
+  <button data-f="done" aria-pressed="false">Completed</button>
+  <button id="export" hidden>Export JSON</button>
+</div>
+
+<div class="board" id="board"></div>
+</main>
+
+<script>
+const CATS=["Statutory approvals","Tenders","Commercial & PO","Compliance","Other"];
+const PR={critical:0,high:1,medium:2,low:3};
+const PCOL={critical:"var(--crit)",high:"var(--high)",medium:"var(--med)",low:"var(--low)"};
+let tasks=[],filter="open",db=null,mode="local";
+const $=s=>document.querySelector(s);
+const today=()=>new Date().toISOString().slice(0,10);
+const uid=()=>"t"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function loadLocal(){try{tasks=JSON.parse(localStorage.getItem("tasks")||"[]")}catch(e){tasks=[]}}
+function saveLocal(){try{localStorage.setItem("tasks",JSON.stringify(tasks))}catch(e){}}
+
+async function persist(t){
+  if(db){try{await db.collection("tasks").doc(t.id).set(t)}catch(e){$("#msg").textContent="Could not save: only editors can change this board."}}
+  else{const i=tasks.findIndex(x=>x.id===t.id);i>=0?tasks[i]=t:tasks.push(t);saveLocal();render()}
+}
+async function remove(id){
+  if(db){try{await db.collection("tasks").doc(id).delete()}catch(e){$("#msg").textContent="Could not delete."}}
+  else{tasks=tasks.filter(t=>t.id!==id);saveLocal();render()}
+}
+
+function render(){
+  const t0=today();
+  const open=tasks.filter(t=>!t.done),late=open.filter(t=>t.deadline&&t.deadline<t0);
+  const crit=open.filter(t=>t.priority==="critical").length;
+  const pct=tasks.length?Math.round(100*(tasks.length-open.length)/tasks.length):0;
+  $("#stats").innerHTML=`<div class="stat"><b>${open.length}</b><span>Open</span></div><div class="stat"><b>${late.length}</b><span>Overdue</span></div><div class="stat"><b>${crit}</b><span>Critical</span></div><div class="stat"><b>${pct}%</b><span>Done</span></div>`;
+  let tip="Add a note above and the board will sort it for you.";
+  if(late.length)tip=`${late.length} task${late.length>1?"s are":" is"} past the deadline. Clear those first: “${late.sort((a,b)=>a.deadline.localeCompare(b.deadline))[0].title}” has waited longest.`;
+  else if(crit)tip=`${crit} critical task${crit>1?"s":""} open. Handle these before anything routine.`;
+  else if(open.length)tip="Nothing urgent right now. A good time to close low-priority follow-ups.";
+  else if(tasks.length)tip="Everything is complete. Capture tomorrow’s notes when they come in.";
+  $("#tip").textContent=tip;
+
+  const shown=tasks.filter(t=>filter==="all"||(filter==="done"?t.done:!t.done));
+  $("#board").innerHTML=CATS.map(c=>{
+    const list=shown.filter(t=>(CATS.includes(t.category)?t.category:"Other")===c)
+      .sort((a,b)=>(a.done-b.done)||(PR[a.priority]??2)-(PR[b.priority]??2)||(a.deadline||"9").localeCompare(b.deadline||"9"));
+    return `<section class="col"><h3>${c}<small>${list.length}</small></h3>${
+      list.length?list.map(card).join(""):'<div class="empty">No tasks here.</div>'}</section>`}).join("");
+}
+function esc(s){return String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
+function card(t){
+  const late=!t.done&&t.deadline&&t.deadline<today();
+  const p=PR[t.priority]!==undefined?t.priority:"medium";
+  return `<div class="task ${t.done?"done":""}" style="--p:${PCOL[p]}">
+    <input type="checkbox" ${t.done?"checked":""} data-id="${esc(t.id)}" aria-label="Mark complete: ${esc(t.title)}">
+    <div style="flex:1;min-width:0"><div class="t">${esc(t.title)}</div>
+    <div class="meta"><span class="tag">${p}</span>${t.deadline?`<span class="${late?"late":""}">${late?"Overdue: ":"Due "}${esc(t.deadline)}</span>`:""}<button class="del" data-del="${esc(t.id)}">Remove</button></div>
+    ${t.note?`<div class="note">${esc(t.note)}</div>`:""}</div></div>`;
+}
+
+document.addEventListener("change",e=>{
+  const id=e.target.dataset&&e.target.dataset.id;if(!id)return;
+  const t=tasks.find(x=>x.id===id);if(t)persist({...t,done:e.target.checked,doneOn:e.target.checked?today():""});
+});
+document.addEventListener("click",e=>{
+  const d=e.target.dataset||{};
+  if(d.del)remove(d.del);
+  if(d.f){filter=d.f;document.querySelectorAll("[data-f]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===filter));render()}
+});
+
+$("#addPlain").onclick=()=>{
+  const v=$("#note").value.trim();if(!v)return;
+  persist({id:uid(),title:v.slice(0,140),category:"Other",priority:"medium",deadline:"",note:"",done:false});
+  $("#note").value="";
+};
+
+$("#extract").onclick=()=>{const v=$("#note").value.trim();if(!v){$("#msg").textContent="Speak or type a note first.";return}runExtract(v,true)};
+async function runExtract(v,clear){
+  const btn=$("#extract");btn.disabled=true;$("#msg").textContent="Translating and sorting your note…";
+  try{
+    const sample=await claude.use("sample");
+    if(!sample){$("#msg").textContent="Extraction is not available here. Use “Add as one task”.";return}
+    const out=await sample.json(
+`Today is ${today()}. The note below may mix Hindi, Marathi and English, with solar and power-sector jargon (MEDA, MSEDCL, MSETCL, SLDC, STOA, MTOA, NOC, RFQ, PO, tender).
+First translate everything into professional, concise English and drop filler, greetings and colloquial phrasing. Then extract every task, explicit or implied. Task titles must be clean English action statements. Return ONLY a JSON array. Each item: {"title": short English action, "category": one of ${JSON.stringify(CATS)}, "priority": "critical"|"high"|"medium"|"low" (statutory deadlines and regulatory impact rank highest), "deadline": "YYYY-MM-DD" or "" if none stated, "note": optional context, empty if none}.
+Note:
+${v}`,{cache:false});
+    const arr=Array.isArray(out)?out:(out.tasks||[]);
+    for(const x of arr){await persist({id:uid(),title:String(x.title||"Untitled").slice(0,140),category:CATS.includes(x.category)?x.category:"Other",priority:PR[x.priority]!==undefined?x.priority:"medium",deadline:/^\d{4}-\d{2}-\d{2}$/.test(x.deadline||"")?x.deadline:"",note:String(x.note||"").slice(0,200),done:false})}
+    $("#msg").textContent=arr.length?`Added ${arr.length} task${arr.length===1?"":"s"}.`:"No tasks found in that note.";if(clear)$("#note").value="";
+  }catch(e){$("#msg").textContent="Could not extract. Try again, or use “Add as one task”."}
+  finally{btn.disabled=false}
+}
+
+(async()=>{
+  loadLocal();render();
+  if(typeof claude==="undefined")return;
+  try{
+    const [d,dict,dl]=await Promise.all([claude.use("db"),claude.use("dictation"),claude.use("downloads")]);
+    if(dict){const m=$("#mic");m.hidden=false;$("#lang").hidden=false;let on=false,buf="",timer=null,q=Promise.resolve();
+      const flush=()=>{clearTimeout(timer);const v=buf.trim();buf="";if(v){$("#live").textContent="";q=q.then(()=>runExtract(v,false))}};
+      dict.onPartial(({text})=>{$("#live").textContent="Hearing: "+text});
+      dict.onFinal(({text})=>{buf+=" "+text;$("#live").textContent="Heard: "+buf.trim();clearTimeout(timer);timer=setTimeout(flush,2500)});
+      dict.onState(({state})=>{on=state==="listening";m.textContent=on?"Stop listening":"Start listening";if(state==="idle")flush()});
+      m.onclick=()=>{on?dict.stop().catch(()=>{}):dict.start({language:$("#lang").value||undefined}).catch(()=>{$("#msg").textContent="Dictation is not available for this language, or the microphone was blocked."})}}
+    if(dl){const b=$("#export");b.hidden=false;b.onclick=()=>dl.save({filename:"task-board.json",data:JSON.stringify(tasks,null,2)}).catch(()=>{})}
+    if(d){db=d;mode="db";
+      const timer=setTimeout(()=>{db=null},10000);
+      d.collection("tasks").onSnapshot(s=>{clearTimeout(timer);tasks=s.docs.map(x=>({id:x.id,...x.data()}));render()},()=>{clearTimeout(timer);db=null;loadLocal();render()});}
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
